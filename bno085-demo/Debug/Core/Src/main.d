@@ -49,12 +49,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Middlewares/Third_Party/FatFs/src/ff_gen_drv.h \
  ../Middlewares/Third_Party/FatFs/src/diskio.h \
  ../Middlewares/Third_Party/FatFs/src/ff.h ../FATFS/Target/user_diskio.h \
- /Users/michaelshipman/Developer/ENEE408A/ENEE408A/bno085-demo/Drivers/sh2-lib/sh2.h \
- /Users/michaelshipman/Developer/ENEE408A/ENEE408A/bno085-demo/Drivers/sh2-lib/sh2_hal.h \
- /Users/michaelshipman/Developer/ENEE408A/ENEE408A/bno085-demo/Drivers/sh2-lib/sh2_err.h \
- /Users/michaelshipman/Developer/ENEE408A/ENEE408A/bno085-demo/Drivers/sh2-lib/sh2_SensorValue.h \
- /Users/michaelshipman/Developer/ENEE408A/ENEE408A/bno085-demo/Drivers/sh2-lib/sh2.h \
- ../Core/Inc/i2c_ll.h ../Core/Inc/sensor_log.h
+ ../Core/Inc/sensor_log.h
 ../Core/Inc/main.h:
 ../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_hal.h:
 ../Core/Inc/stm32wlxx_hal_conf.h:
@@ -109,10 +104,4 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Middlewares/Third_Party/FatFs/src/diskio.h:
 ../Middlewares/Third_Party/FatFs/src/ff.h:
 ../FATFS/Target/user_diskio.h:
-/Users/michaelshipman/Developer/ENEE408A/ENEE408A/bno085-demo/Drivers/sh2-lib/sh2.h:
-/Users/michaelshipman/Developer/ENEE408A/ENEE408A/bno085-demo/Drivers/sh2-lib/sh2_hal.h:
-/Users/michaelshipman/Developer/ENEE408A/ENEE408A/bno085-demo/Drivers/sh2-lib/sh2_err.h:
-/Users/michaelshipman/Developer/ENEE408A/ENEE408A/bno085-demo/Drivers/sh2-lib/sh2_SensorValue.h:
-/Users/michaelshipman/Developer/ENEE408A/ENEE408A/bno085-demo/Drivers/sh2-lib/sh2.h:
-../Core/Inc/i2c_ll.h:
 ../Core/Inc/sensor_log.h:

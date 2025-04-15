@@ -66,7 +66,7 @@ main-build: bno085-log-demo.elf secondary-outputs
 
 # Tool invocations
 bno085-log-demo.elf bno085-log-demo.map: $(OBJS) $(USER_OBJS) /Users/michaelshipman/Developer/ENEE408A/ENEE408A/bno085-demo/STM32WLE5CCUX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "bno085-log-demo.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/Users/michaelshipman/Developer/ENEE408A/ENEE408A/bno085-demo/STM32WLE5CCUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="bno085-log-demo.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+	arm-none-eabi-gcc -o "bno085-log-demo.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/Users/michaelshipman/Developer/ENEE408A/ENEE408A/bno085-demo/STM32WLE5CCUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="bno085-log-demo.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

@@ -23,12 +23,6 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
-#include "sh2.h"
-#include "sh2_err.h"
-#include "sh2_SensorValue.h"
-#include "i2c_ll.h"
-#include "string.h"
-
 #include "app_fatfs.h"
 #include "sensor_log.h"
 
@@ -46,17 +40,8 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-#define BNO085_ADDR 0x4A
-
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
-
-#define I2C_SPEED_FREQ              100000
-#define I2C_BYTE_TIMEOUT_US         ((10^6) / (I2C_SPEED_FREQ / 9) + 1)
-#define I2C_BYTE_TIMEOUT_MS         (I2C_BYTE_TIMEOUT_US / 1000 + 1)
-
-#define MILLI_G_TO_MS2 0.0098067 ///< Scalar to convert milli-gs to m/s^2
-#define DEGREE_SCALE 0.01        ///< To convert the degree values
 
 /* USER CODE END PD */
 
@@ -73,21 +58,7 @@ SPI_HandleTypeDef hspi1;
 
 /* USER CODE BEGIN PV */
 
-sh2_SensorValue_t sensor_value;
-
-uint8_t bno_buffer[20] = { 0 };
-
-typedef struct BNO08xRVCData {
-	float yaw,     ///< Yaw in Degrees
-			pitch,     ///< Pitch in Degrees
-			roll;      ///< Roll in Degrees
-	float x_accel, ///< The X acceleration value in m/s^2
-			y_accel,   ///< The Y acceleration value in m/s^2
-			z_accel;   ///< The Z acceleration value in m/s^2
-
-} BNO08x_RVC_Data;
-
-BNO08x_RVC_Data data = { 0 };
+sensor_data_t data = { 0 };
 
 // Declaring FatFS related objects.; filesystem, file object for general use,
 // and result code for FatFS ops.
@@ -105,6 +76,7 @@ FRESULT res;
 // Object for number of bytes written
 FIL csvFile;
 UINT bytes_written;
+char csv_line[256];   // Buffer for formatted CSV row
 
 /* USER CODE END PV */
 
@@ -115,15 +87,6 @@ static void MX_I2C1_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_LPUART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
-
-int open(sh2_Hal_t *self);
-void close(sh2_Hal_t *self);
-int read(sh2_Hal_t *self, uint8_t *pBuffer, unsigned len, uint32_t *t_us);
-int write(sh2_Hal_t *self, uint8_t *pBuffer, unsigned len);
-uint32_t get_time_us(sh2_Hal_t *self);
-
-void eventCallback(void *cookie, sh2_AsyncEvent_t *pEvent);
-void sensorCallback(void *cookie, sh2_SensorEvent_t *pEvent);
 
 /* USER CODE END PFP */
 
@@ -139,13 +102,6 @@ void myprintf(const char *fmt, ...) {
 	//HAL_UART_Transmit(&huart2, (uint8_t*) buffer, strlen(buffer), HAL_MAX_DELAY);
 }
 
-sh2_Hal_t bno_sh = { &open, &close, &read, &write, &get_time_us };
-sh2_ProductIds_t bno_id = { 0 };
-sh2_ProductIds_t bno_id2 = { 0 };
-sh2_SensorConfig_t bno_config = { 0 };
-sh2_SensorConfig_t bno_config2 = { 0 };
-sh2_SensorId_t reportType = SH2_GAME_ROTATION_VECTOR;
-
 /* USER CODE END 0 */
 
 /**
@@ -155,8 +111,6 @@ sh2_SensorId_t reportType = SH2_GAME_ROTATION_VECTOR;
 int main(void) {
 
 	/* USER CODE BEGIN 1 */
-
-	int status = SH2_OK;
 
 	/* USER CODE END 1 */
 
@@ -199,13 +153,12 @@ int main(void) {
 	}
 
 	//-- CSV File Setup --
-
 	// Open/create CSV file for writing
-	res = f_open(&csvFile, "data.csv", FA_WRITE | FA_CREATE_ALWAYS);
+	res = f_open(&csvFile, "data.csv", FA_WRITE | FA_OPEN_ALWAYS);
 	if (res == FR_OK) {
 		// CSV column headers
 		const char *header =
-				"timestamp,yaw,pitch,roll,x_accel,y_accel,z_accel\r\n";
+				"timestamp,yaw,pitch,roll,x_accel,y_accel,z_accel,temperature,pressure,humidity\r\n";
 		res = f_write(&csvFile, header, strlen(header), &bytes_written);
 		if (res == FR_OK) {
 			myprintf("CSV header written.\r\n");
@@ -214,41 +167,6 @@ int main(void) {
 		}
 		// Close file after writing
 		f_close(&csvFile);
-
-		//-- Dummy sensor logging test, comment out for flight --
-		SensorData test_data; // Struct for fake data
-		char csv_line[128];   // Buffer for formatted CSV row
-
-		for (int i = 0; i < 5; i++) {
-			// Fake sensor values
-			test_data.timestamp = HAL_GetTick();
-			test_data.temperature = 20.0f + i; // e.g. 20.0, 21.0, ...
-			test_data.pressure = 1000.0f + i * 2;
-			test_data.humidity = 50.0f + i * 1.5f;
-
-			// Format CSV line
-			format_csv_line(csv_line, sizeof(csv_line), &test_data);
-
-			// Open file in append mode
-			res = f_open(&csvFile, "data.csv", FA_OPEN_APPEND | FA_WRITE);
-			if (res == FR_OK) {
-				UINT bytes_written;
-				res = f_write(&csvFile, csv_line, strlen(csv_line),
-						&bytes_written);
-				f_close(&csvFile);
-
-				// Report success or failure over UART
-				if (res == FR_OK) {
-					myprintf("Row %d written: %s", i + 1, csv_line);
-				} else {
-					myprintf("Write failed (%d)\r\n", res);
-				}
-			} else {
-				myprintf("Append open failed (%d)\r\n", res);
-			}
-
-			HAL_Delay(1000); // 1 second between entries
-		}
 
 	} else {
 		// If opening CSV file failed print
@@ -262,47 +180,28 @@ int main(void) {
 
 	while (1) {
 
-		bno_buffer[0] = 0;
-		bno_buffer[1] = 0;
+		// fill data struct
+		data.timestamp = HAL_GetTick();
+		get_bno_data(&data);
 
-		while (bno_buffer[0] != 0xAA)
-			HAL_UART_Receive(&hlpuart1, bno_buffer, 1, 1000);
+		// Format CSV line
+		format_csv_line(csv_line, sizeof(csv_line), &data);
 
-		while (bno_buffer[1] != 0xAA)
-			HAL_UART_Receive(&hlpuart1, bno_buffer + 1, 1, 1000);
+		// Open file in append mode
+		res = f_open(&csvFile, "data.csv", FA_OPEN_APPEND | FA_WRITE);
+		if (res == FR_OK) {
+			UINT bytes_written;
+			res = f_write(&csvFile, csv_line, strlen(csv_line), &bytes_written);
+			f_close(&csvFile);
 
-		HAL_UART_Receive(&hlpuart1, bno_buffer + 2, 17, 1000);
-
-		if (bno_buffer[0] == 0xAA && bno_buffer[1] == 0xAA) {
-			//got data!!!
-
-			uint8_t sum = 0;
-			// get checksum ready
-			for (uint8_t i = 2; i < 17; i++) {
-				sum += bno_buffer[i];
+			// Report success or failure over UART
+			if (res == FR_OK) {
+				myprintf("Row written: %s", csv_line);
+			} else {
+				myprintf("Write failed (%d)\r\n", res);
 			}
-
-			if (sum != bno_buffer[18]) {
-				// data not valid
-				;
-			}
-
-			// The data comes in endian'd, this solves it so it works on all platforms
-			int16_t buffer_16[6];
-
-			for (uint8_t i = 0; i < 6; i++) {
-
-				buffer_16[i] = (bno_buffer[1 + (i * 2)]);
-				buffer_16[i] += (bno_buffer[1 + (i * 2) + 1] << 8);
-			}
-			data.yaw = (float) buffer_16[0] * DEGREE_SCALE;
-			data.pitch = (float) buffer_16[1] * DEGREE_SCALE;
-			data.roll = (float) buffer_16[2] * DEGREE_SCALE;
-
-			data.x_accel = (float) buffer_16[3] * MILLI_G_TO_MS2;
-			data.y_accel = (float) buffer_16[4] * MILLI_G_TO_MS2;
-			data.z_accel = (float) buffer_16[5] * MILLI_G_TO_MS2;
-
+		} else {
+			myprintf("Append open failed (%d)\r\n", res);
 		}
 
 		/* USER CODE END WHILE */
@@ -528,123 +427,6 @@ static void MX_GPIO_Init(void) {
 }
 
 /* USER CODE BEGIN 4 */
-
-int open(sh2_Hal_t *self) {
-	// auto-gen MX functions run before this is called
-
-	uint8_t softreset_pkt[] = { 5, 0, 1, 0, 1 };
-	bool success = false;
-	for (uint8_t attempts = 0; attempts < 5; attempts++) {
-		if (I2Cx_WriteData(I2C1, BNO085_ADDR, 0x00, 0, softreset_pkt, 5)) {
-			success = true;
-			break;
-		}
-		HAL_Delay(30);
-	}
-	if (!success)
-		return -1;
-	HAL_Delay(300);
-	return 0;
-}
-
-void close(sh2_Hal_t *self) {
-	// TODO: pull BNO085 reset pin low
-
-	// de-init resource (which I don't think we need to do)
-}
-
-int read(sh2_Hal_t *self, uint8_t *pBuffer, unsigned len, uint32_t *t_us) {
-
-	uint8_t header[4];
-	if (!I2Cx_ReadData(I2C1, BNO085_ADDR, 0x00, 0, header, 4)) {
-		return 0;
-	}
-
-	// Determine amount to read
-	uint16_t packet_size = (uint16_t) header[0] | (uint16_t) header[1] << 8;
-	// Unset the "continue" bit
-	packet_size &= ~0x8000;
-
-	size_t i2c_buffer_max = 128;
-
-	if (packet_size > len) {
-		// packet wouldn't fit in our buffer
-		return 0;
-	}
-	// the number of non-header bytes to read
-	uint16_t cargo_remaining = packet_size;
-	uint8_t i2c_buffer[i2c_buffer_max];
-	uint16_t read_size;
-	uint16_t cargo_read_amount = 0;
-	bool first_read = true;
-
-	while (cargo_remaining > 0) {
-		if (first_read) {
-			read_size = MIN(i2c_buffer_max, (size_t ) cargo_remaining);
-		} else {
-			read_size = MIN(i2c_buffer_max, (size_t ) cargo_remaining + 4);
-		}
-
-		if (!I2Cx_ReadData(I2C1, BNO085_ADDR, 0x00, 0, i2c_buffer, read_size)) {
-			return 0;
-		}
-
-		if (first_read) {
-			// The first time we're saving the "original" header, so include it in the
-			// cargo count
-			cargo_read_amount = read_size;
-			memcpy(pBuffer, i2c_buffer, cargo_read_amount);
-			first_read = false;
-		} else {
-			// this is not the first read, so copy from 4 bytes after the beginning of
-			// the i2c buffer to skip the header included with every new i2c read and
-			// don't include the header in the amount of cargo read
-			cargo_read_amount = read_size - 4;
-			memcpy(pBuffer, i2c_buffer + 4, cargo_read_amount);
-		}
-		// advance our pointer by the amount of cargo read
-		pBuffer += cargo_read_amount;
-		// mark the cargo as received
-		cargo_remaining -= cargo_read_amount;
-	}
-
-	return packet_size;
-}
-
-int write(sh2_Hal_t *self, uint8_t *pBuffer, unsigned len) {
-	size_t i2c_buffer_max = 128;
-	uint16_t write_size = MIN(i2c_buffer_max, len);
-
-	if (!I2Cx_WriteData(I2C1, BNO085_ADDR, 0x00, 0, pBuffer, write_size)) {
-		return 0;
-	}
-
-	return write_size;
-}
-
-uint32_t get_time_us(sh2_Hal_t *self) {
-	return (uint32_t) SysTick->VAL;
-}
-
-void eventCallback(void *cookie, sh2_AsyncEvent_t *pEvent) {
-	// do nothing rn
-}
-void sensorCallback(void *cookie, sh2_SensorEvent_t *pEvent) {
-	int rc;
-
-	rc = sh2_decodeSensorEvent(&sensor_value, pEvent);
-}
-
-uint8_t pos = 0;
-
-/*
- void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-
- if (bno_buffer[0] == )
-
- HAL_UART_Receive_IT(&hlpuart1, bno_buffer + (pos++ % 19), 1);
- }
- */
 
 /* USER CODE END 4 */
 
