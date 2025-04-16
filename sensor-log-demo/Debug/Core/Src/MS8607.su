@@ -1,0 +1,13 @@
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_i2c.h:1552:26:LL_I2C_IsActiveFlag_TXE	16	static
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_i2c.h:1578:26:LL_I2C_IsActiveFlag_RXNE	16	static
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_i2c.h:2133:22:LL_I2C_HandleTransfer	32	static
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_i2c.h:2225:25:LL_I2C_ReceiveData8	16	static
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_i2c.h:2237:22:LL_I2C_TransmitData8	16	static
+../Core/Src/MS8607.c:26:12:i2c_read_blocking	48	static
+../Core/Src/MS8607.c:47:12:i2c_write_blocking	40	static
+../Core/Src/MS8607.c:68:5:MS8607_init	16	static
+../Core/Src/MS8607.c:75:5:MS8607_reset	16	static
+../Core/Src/MS8607.c:89:5:MS8607_get_press_temp	288	static
+../Core/Src/MS8607.c:148:5:MS8607_get_rel_humidity	32	static
+../Core/Src/MS8607.c:167:12:read_prom	16	static
+../Core/Src/MS8607.c:221:12:conversion	16	static

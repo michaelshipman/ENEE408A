@@ -1,0 +1,17 @@
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_bus.h:449:22:LL_AHB2_GRP1_EnableClock	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_bus.h:914:22:LL_APB1_GRP1_EnableClock	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_i2c.h:644:22:LL_I2C_EnableClockStretching	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_i2c.h:764:22:LL_I2C_DisableGeneralCall	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_i2c.h:875:22:LL_I2C_SetOwnAddress2	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_i2c.h:897:22:LL_I2C_DisableOwnAddress2	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_i2c.h:1879:22:LL_I2C_EnableAutoEndMode	1
+../Core/Inc/sensor_log.h:32:20:format_csv_line	1
+../Core/Inc/sensor_log.h:43:20:get_bno_data	7
+../Core/Src/main.c:96:6:myprintf	1
+../Core/Src/main.c:111:5:main	6
+../Core/Src/main.c:222:6:SystemClock_Config	3
+../Core/Src/main.c:261:13:MX_I2C1_Init	2
+../Core/Src/main.c:326:13:MX_LPUART1_UART_Init	5
+../Core/Src/main.c:373:13:MX_SPI1_Init	2
+../Core/Src/main.c:411:13:MX_GPIO_Init	1
+../Core/Src/main.c:441:6:Error_Handler	1
